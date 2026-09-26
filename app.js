@@ -87,11 +87,14 @@
     }
   ];
 
-  // Helper to generate ISO date string (YYYY-MM-DD)
+  // Helper to generate local date string (YYYY-MM-DD)
   function getRelativeDate(daysAgo = 0) {
     const d = new Date();
     d.setDate(d.getDate() - daysAgo);
-    return d.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   // Application State
@@ -114,6 +117,8 @@
     themeIconSun: document.getElementById('themeIconSun'),
     themeIconMoon: document.getElementById('themeIconMoon'),
     openSettingsBtn: document.getElementById('openSettingsBtn'),
+    storageStatusBadge: document.getElementById('storageStatusBadge'),
+    storageStatusText: document.getElementById('storageStatusText'),
     
     // Form Inputs
     expenseForm: document.getElementById('expenseForm'),
@@ -179,38 +184,127 @@
     toastContainer: document.getElementById('toastContainer')
   };
 
+  // --- INDEXEDDB STORAGE BACKUP ---
+  const DB_NAME = 'MonitAedDB';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'monit_store';
+
+  function openDatabase() {
+    return new Promise((resolve) => {
+      if (!window.indexedDB) {
+        resolve(null);
+        return;
+      }
+      try {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => resolve(null);
+      } catch (err) {
+        resolve(null);
+      }
+    });
+  }
+
+  async function saveToIndexedDB(key, val) {
+    try {
+      const db = await openDatabase();
+      if (!db) return;
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      store.put({ key: key, value: val });
+    } catch (e) {
+      // Ignore background IDB errors
+    }
+  }
+
+  async function loadFromIndexedDB(key) {
+    try {
+      const db = await openDatabase();
+      if (!db) return null;
+      return new Promise((resolve) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.get(key);
+        req.onsuccess = () => resolve(req.result ? req.result.value : null);
+        req.onerror = () => resolve(null);
+      });
+    } catch (e) {
+      return null;
+    }
+  }
+
   // --- INITIALIZATION ---
-  function init() {
+  async function init() {
     loadSettings();
-    loadExpenses();
+    await loadExpenses();
     setupDefaultDate();
     setupEventListeners();
     applyTheme(localStorage.getItem(STORAGE_KEY_THEME) || 'dark');
     renderAll();
+    updateStorageStatusBadge('Ready');
   }
 
   // --- STORAGE & STATE MANAGEMENT ---
-  function loadExpenses() {
+  async function loadExpenses() {
     try {
       const data = localStorage.getItem(STORAGE_KEY_EXPENSES);
-      if (data) {
-        state.expenses = JSON.parse(data);
-      } else {
-        // Start with clean state; user can easily click demo data
-        state.expenses = [];
+      if (data && data !== '[]') {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          state.expenses = parsed;
+          return;
+        }
       }
     } catch (e) {
-      console.error('Failed to load expenses:', e);
-      state.expenses = [];
+      console.warn('LocalStorage read issue:', e);
     }
+
+    // Secondary fallback: IndexedDB
+    try {
+      const idbData = await loadFromIndexedDB(STORAGE_KEY_EXPENSES);
+      if (idbData && Array.isArray(idbData) && idbData.length > 0) {
+        state.expenses = idbData;
+        try {
+          localStorage.setItem(STORAGE_KEY_EXPENSES, JSON.stringify(idbData));
+        } catch (_) {}
+        return;
+      }
+    } catch (e) {
+      console.warn('IndexedDB read issue:', e);
+    }
+
+    state.expenses = [];
   }
 
   function saveExpenses() {
+    updateStorageStatusBadge('Saving...');
     try {
       localStorage.setItem(STORAGE_KEY_EXPENSES, JSON.stringify(state.expenses));
     } catch (e) {
-      console.error('Failed to save expenses:', e);
-      showToast('Storage full or error saving data', 'error');
+      console.warn('LocalStorage write failed:', e);
+    }
+
+    // Always mirror to IndexedDB for safety
+    saveToIndexedDB(STORAGE_KEY_EXPENSES, state.expenses);
+
+    setTimeout(() => {
+      updateStorageStatusBadge('Saved ✓');
+    }, 250);
+  }
+
+  function updateStorageStatusBadge(text = 'Auto-Saved') {
+    if (!DOM.storageStatusBadge || !DOM.storageStatusText) return;
+    DOM.storageStatusText.textContent = text;
+    if (text.includes('Saving')) {
+      DOM.storageStatusBadge.classList.add('saving');
+    } else {
+      DOM.storageStatusBadge.classList.remove('saving');
     }
   }
 
@@ -226,7 +320,10 @@
 
   function saveBudget(newBudget) {
     state.budget = newBudget;
-    localStorage.setItem(STORAGE_KEY_BUDGET, newBudget);
+    try {
+      localStorage.setItem(STORAGE_KEY_BUDGET, newBudget);
+      saveToIndexedDB(STORAGE_KEY_BUDGET, newBudget);
+    } catch (_) {}
     renderBudget();
     renderKPIs();
     showToast(`Monthly budget set to ${formatCurrency(newBudget)} AED`, 'success');
