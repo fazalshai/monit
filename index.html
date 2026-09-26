@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monit | AED Expense Tracker & Spending Dashboard</title>
+  <meta name="description" content="Track your daily expenses in AED, monitor spending categories, set monthly budgets, and analyze financial habits with Monit.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="app-title">Monit<span class="accent-text">.aed</span></h1>
+          <p class="app-subtitle">Smart UAE Expense Tracker</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Budget Progress Widget -->
+        <div class="header-budget-chip" id="budgetChip" title="Click to adjust monthly budget">
+          <div class="budget-info">
+            <span class="budget-label">Monthly Budget</span>
+            <span class="budget-values" id="headerBudgetVal">0 / 5,000 AED</span>
+          </div>
+          <div class="budget-bar-mini">
+            <div class="budget-fill-mini" id="headerBudgetFill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <button id="themeToggleBtn" class="btn-icon" aria-label="Toggle Dark/Light Mode" title="Toggle Theme">
+          <svg id="themeIconSun" class="icon-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg id="themeIconMoon" class="icon-moon hidden" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+
+        <button id="openSettingsBtn" class="btn-icon" aria-label="Settings and Data Export" title="Data Backup & Budget">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="dashboard-grid">
+      <!-- Left Column: Add Expense & Quick Denominations -->
+      <section class="card input-section" aria-labelledby="addSpendingHeading">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="card-icon-badge">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </span>
+            <h2 id="addSpendingHeading">Add New Spending</h2>
+          </div>
+          <button id="quickSampleBtn" class="btn-ghost-sm" title="Load realistic UAE sample expenses to try the app">Demo Data</button>
+        </div>
+
+        <form id="expenseForm" class="expense-form" autocomplete="off">
+          <!-- Amount Input Group -->
+          <div class="form-group amount-group">
+            <label for="amountInput">Amount (<span class="currency-tag">AED</span>) <span class="required">*</span></label>
+            <div class="amount-field-wrap">
+              <span class="amount-prefix">AED</span>
+              <input 
+                type="number" 
+                id="amountInput" 
+                name="amount" 
+                placeholder="0.00" 
+                step="0.01" 
+                min="0.01" 
+                max="10000000" 
+                required 
+                autofocus
+              >
+            </div>
+            
+            <!-- Quick AED increments -->
+            <div class="quick-pills" aria-label="Quick amount presets">
+              <button type="button" class="quick-pill" data-add="10">+10</button>
+              <button type="button" class="quick-pill" data-add="25">+25</button>
+              <button type="button" class="quick-pill" data-add="50">+50</button>
+              <button type="button" class="quick-pill" data-add="100">+100</button>
+              <button type="button" class="quick-pill" data-add="500">+500</button>
+              <button type="button" class="quick-pill reset-pill" id="clearAmountBtn">Reset</button>
+            </div>
+          </div>
+
+          <!-- Item / Description Input -->
+          <div class="form-group">
+            <label for="itemInput">For What Item? <span class="required">*</span></label>
+            <div class="input-with-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              <input 
+                type="text" 
+                id="itemInput" 
+                name="item" 
+                placeholder="e.g. Carrefour Groceries, Karak Chai, Metro" 
+                maxlength="80" 
+                required
+              >
+            </div>
+            <!-- Quick item suggestions -->
+            <div class="suggestion-tags" id="suggestionTags">
+              <span class="sugg-tag" data-item="Karak & Snacks" data-cat="food">☕ Karak Chai</span>
+              <span class="sugg-tag" data-item="Carrefour Groceries" data-cat="groceries">🛒 Groceries</span>
+              <span class="sugg-tag" data-item="Salik Recharge" data-cat="transport">🚗 Salik</span>
+              <span class="sugg-tag" data-item="Petrol / Fuel" data-cat="transport">⛽ Fuel</span>
+              <span class="sugg-tag" data-item="Dining Out" data-cat="food">🍔 Dinner</span>
+              <span class="sugg-tag" data-item="DEWA Bill" data-cat="bills">💡 DEWA</span>
+            </div>
+          </div>
+
+          <!-- Category Selection -->
+          <div class="form-group">
+            <label>Category <span class="required">*</span></label>
+            <div class="category-grid" id="categoryPicker" role="radiogroup" aria-label="Expense Category">
+              <button type="button" class="cat-chip active" data-category="food" role="radio" aria-checked="true">
+                <span class="cat-icon">🍔</span>
+                <span class="cat-name">Food & Dining</span>
+              </button>
+              <button type="button" class="cat-chip" data-category="groceries" role="radio" aria-checked="false">
+                <span class="cat-icon">🛒</span>
+                <span class="cat-name">Groceries</span>
+              </button>
+              <button type="button" class="cat-chip" data-category="transport" role="radio" aria-checked="false">
+                <span class="cat-icon">🚗</span>
+                <span class="cat-name">Transport & Fuel</span>
+              </button>
+              <button type="button" class="cat-chip" data-category="shopping" role="radio" aria-checked="false">
+                <span class="cat-icon">🛍️</span>
+                <span class="cat-name">Shopping</span>
+              </button>
+              <button type="button" class="cat-chip" data-category="bills" role="radio" aria-checked="false">
+                <span class="cat-icon">💡</span>
+                <span class="cat-name">Bills & Utilities</span>
+              </button>
+              <button type="button" class="cat-chip" data-category="health" role="radio" aria-checked="false">
+                <span class="cat-icon">💊</span>
+                <span class="cat-name">Healthcare</span>
+              </button>
+              <button type="button" class="cat-chip" data-category="entertainment" role="radio" aria-checked="false">
+                <span class="cat-icon">🎬</span>
+                <span class="cat-name">Leisure & Fun</span>
+              </button>
+              <button type="button" class="cat-chip" data-category="other" role="radio" aria-checked="false">
+                <span class="cat-icon">📦</span>
+                <span class="cat-name">Other</span>
+              </button>
+            </div>
+            <input type="hidden" id="categoryInput" name="category" value="food">
+          </div>
+
+          <!-- Date & Payment Method row -->
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="dateInput">Date</label>
+              <input type="date" id="dateInput" name="date" required>
+            </div>
+            <div class="form-group">
+              <label for="paymentMethodSelect">Paid via</label>
+              <select id="paymentMethodSelect" name="paymentMethod">
+                <option value="Apple Pay">📱 Apple Pay / Google Pay</option>
+                <option value="Credit Card">💳 Credit Card</option>
+                <option value="Debit Card">🏦 Debit Card</option>
+                <option value="Cash">💵 Cash</option>
+                <option value="Bank Transfer">🔄 Bank Transfer</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Optional Notes -->
+          <div class="form-group">
+            <label for="notesInput">Notes (optional)</label>
+            <input type="text" id="notesInput" name="notes" placeholder="e.g. Paid for friends, split pending" maxlength="120">
+          </div>
+
+          <button type="submit" id="saveExpenseBtn" class="btn-primary-action">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Record Spending</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Right Column: Spending Overview & Insights -->
+      <section class="overview-section" aria-label="Spending Overview & Statistics">
+        <!-- Top Summary Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card highlight-kpi">
+            <div class="kpi-top">
+              <span class="kpi-title">Total Spent</span>
+              <span class="kpi-icon-pill">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </span>
+            </div>
+            <div class="kpi-value-row">
+              <span class="kpi-currency">AED</span>
+              <span class="kpi-number" id="kpiTotalAmount">0.00</span>
+            </div>
+            <div class="kpi-footer" id="kpiTotalSubtext">0 spendings recorded</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-title">This Month</span>
+              <span class="kpi-icon-pill month-pill">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </span>
+            </div>
+            <div class="kpi-value-row">
+              <span class="kpi-currency">AED</span>
+              <span class="kpi-number" id="kpiMonthAmount">0.00</span>
+            </div>
+            <div class="kpi-footer" id="kpiMonthComparison">0% of monthly budget</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-title">Today's Spend</span>
+              <span class="kpi-icon-pill today-pill">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+              </span>
+            </div>
+            <div class="kpi-value-row">
+              <span class="kpi-currency">AED</span>
+              <span class="kpi-number" id="kpiTodayAmount">0.00</span>
+            </div>
+            <div class="kpi-footer" id="kpiTodayCount">0 transactions today</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span class="kpi-title">Top Category</span>
+              <span class="kpi-icon-pill topcat-pill">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </span>
+            </div>
+            <div class="kpi-value-row">
+              <span class="kpi-text-highlight" id="kpiTopCategory">None yet</span>
+            </div>
+            <div class="kpi-footer" id="kpiTopCategoryAmount">0.00 AED spent</div>
+          </div>
+        </div>
+
+        <!-- Category Breakdown & Visual Analytics -->
+        <div class="card analytics-card">
+          <div class="card-header">
+            <div class="card-header-title">
+              <span class="card-icon-badge">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+              </span>
+              <h2>Where Did Your Money Go?</h2>
+            </div>
+            <div class="time-filter-tabs" id="analyticsFilterTabs">
+              <button type="button" class="tab-btn active" data-period="all">All Time</button>
+              <button type="button" class="tab-btn" data-period="month">This Month</button>
+              <button type="button" class="tab-btn" data-period="week">This Week</button>
+            </div>
+          </div>
+
+          <!-- Distribution Visualization -->
+          <div class="breakdown-container">
+            <!-- Visual Proportion Bar -->
+            <div class="stacked-bar-wrapper">
+              <div class="stacked-bar" id="categoryStackedBar" aria-label="Visual breakdown bar of spending">
+                <!-- Dynamic segments inserted here -->
+              </div>
+            </div>
+
+            <!-- Category Legend List -->
+            <div class="category-breakdown-list" id="categoryBreakdownList">
+              <!-- Dynamically populated rows with amount and percentage -->
+              <div class="empty-state-mini">
+                <p>No spendings recorded yet. Enter your first expense on the left!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transactions History & Filter Bar -->
+        <div class="card history-card">
+          <div class="card-header responsive-header">
+            <div class="card-header-title">
+              <span class="card-icon-badge">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              </span>
+              <h2>All Spendings</h2>
+              <span class="badge-count" id="txCountBadge">0</span>
+            </div>
+
+            <!-- Controls: Search & Category filter -->
+            <div class="history-controls">
+              <div class="search-wrap">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="txSearchInput" placeholder="Search item, notes..." aria-label="Search transactions">
+                <button type="button" id="clearSearchBtn" class="clear-btn hidden" aria-label="Clear search">×</button>
+              </div>
+
+              <select id="txFilterCategory" aria-label="Filter by category">
+                <option value="all">All Categories</option>
+                <option value="food">🍔 Food & Dining</option>
+                <option value="groceries">🛒 Groceries</option>
+                <option value="transport">🚗 Transport & Fuel</option>
+                <option value="shopping">🛍️ Shopping</option>
+                <option value="bills">💡 Bills & Utilities</option>
+                <option value="health">💊 Healthcare</option>
+                <option value="entertainment">🎬 Leisure</option>
+                <option value="other">📦 Other</option>
+              </select>
+
+              <select id="txSortSelect" aria-label="Sort transactions">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="highest">Highest Amount</option>
+                <option value="lowest">Lowest Amount</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Transaction List Container -->
+          <div class="tx-list-container" id="txListContainer">
+            <!-- Populated via JS -->
+            <div class="empty-state-large" id="emptyStatePlaceholder">
+              <div class="empty-icon-wrap">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+              </div>
+              <h3>No Spendings Recorded Yet</h3>
+              <p>Type your expense amount in AED and the item name above to get started tracking your money!</p>
+              <button type="button" id="emptyLoadDemoBtn" class="btn-secondary-action">
+                <span>Load Sample UAE Expenses</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Settings & Budget Modal -->
+    <dialog id="settingsModal" class="modal-dialog" closedby="any">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Settings & Data Management</h3>
+          <button type="button" id="closeSettingsModalBtn" class="btn-close" aria-label="Close modal">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Monthly Budget Setting -->
+          <div class="settings-box">
+            <h4>Monthly Budget Target</h4>
+            <p class="settings-desc">Set how much AED you plan to spend per month to track progress.</p>
+            <div class="budget-input-row">
+              <span class="amount-prefix">AED</span>
+              <input type="number" id="modalBudgetInput" min="100" max="1000000" step="100" value="5000">
+              <button type="button" id="saveBudgetBtn" class="btn-primary-sm">Save</button>
+            </div>
+          </div>
+
+          <!-- Export & Import Data -->
+          <div class="settings-box">
+            <h4>Backup & Export</h4>
+            <p class="settings-desc">Your spendings are saved locally on your device. You can download a backup anytime.</p>
+            <div class="modal-action-row">
+              <button type="button" id="exportCsvBtn" class="btn-outline-sm">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export CSV (Excel)
+              </button>
+              <button type="button" id="exportJsonBtn" class="btn-outline-sm">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Backup JSON
+              </button>
+            </div>
+            
+            <div class="import-area">
+              <label for="importJsonInput" class="btn-ghost-sm full-width-btn">
+                <span>Restore Backup (Import JSON)</span>
+                <input type="file" id="importJsonInput" accept=".json" style="display:none;">
+              </label>
+            </div>
+          </div>
+
+          <!-- Danger Zone: Reset -->
+          <div class="settings-box danger-box">
+            <h4>Reset All Data</h4>
+            <p class="settings-desc">Erase all saved transactions and reset the tracker to empty state.</p>
+            <button type="button" id="clearAllDataBtn" class="btn-danger-sm">Clear All Expenses</button>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Edit Transaction Modal -->
+    <dialog id="editTxModal" class="modal-dialog" closedby="any">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Edit Spending</h3>
+          <button type="button" id="closeEditModalBtn" class="btn-close" aria-label="Close modal">✕</button>
+        </div>
+
+        <form id="editTxForm" class="modal-body expense-form">
+          <input type="hidden" id="editTxId">
+          <div class="form-group amount-group">
+            <label for="editAmount">Amount in AED</label>
+            <div class="amount-field-wrap">
+              <span class="amount-prefix">AED</span>
+              <input type="number" id="editAmount" step="0.01" min="0.01" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="editItem">Item Description</label>
+            <input type="text" id="editItem" maxlength="80" required>
+          </div>
+
+          <div class="form-group">
+            <label for="editCategory">Category</label>
+            <select id="editCategory">
+              <option value="food">🍔 Food & Dining</option>
+              <option value="groceries">🛒 Groceries</option>
+              <option value="transport">🚗 Transport & Fuel</option>
+              <option value="shopping">🛍️ Shopping</option>
+              <option value="bills">💡 Bills & Utilities</option>
+              <option value="health">💊 Healthcare</option>
+              <option value="entertainment">🎬 Leisure & Fun</option>
+              <option value="other">📦 Other</option>
+            </select>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="editDate">Date</label>
+              <input type="date" id="editDate" required>
+            </div>
+            <div class="form-group">
+              <label for="editPayment">Paid via</label>
+              <select id="editPayment">
+                <option value="Apple Pay">📱 Apple Pay / Google Pay</option>
+                <option value="Credit Card">💳 Credit Card</option>
+                <option value="Debit Card">🏦 Debit Card</option>
+                <option value="Cash">💵 Cash</option>
+                <option value="Bank Transfer">🔄 Bank Transfer</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="editNotes">Notes (optional)</label>
+            <input type="text" id="editNotes" maxlength="120">
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" id="cancelEditBtn" class="btn-ghost-sm">Cancel</button>
+            <button type="submit" class="btn-primary-action">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

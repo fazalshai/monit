@@ -1,0 +1,12 @@
+{
+  "name": "monit-aed",
+  "version": "1.0.0",
+  "description": "Smart AED expense tracker and spending dashboard for UAE",
+  "scripts": {
+    "start": "npx -y serve . -l 3000",
+    "dev": "npx -y serve . -l 3000"
+  },
+  "keywords": ["expense-tracker", "aed", "uae", "budget", "finance"],
+  "author": "Fazal",
+  "license": "MIT"
+}
