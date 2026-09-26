@@ -239,19 +239,61 @@
     }
   }
 
+  // --- CLOUD SERVER API & OFFLINE DUAL STORAGE ---
+  let isServerConnected = false;
+
+  async function checkServerApi() {
+    try {
+      const res = await fetch('/api/health', { signal: AbortSignal.timeout(2500) });
+      if (res.ok) {
+        isServerConnected = true;
+        return true;
+      }
+    } catch (_) {}
+    isServerConnected = false;
+    return false;
+  }
+
   // --- INITIALIZATION ---
   async function init() {
     loadSettings();
+    await checkServerApi();
     await loadExpenses();
     setupDefaultDate();
     setupEventListeners();
     applyTheme(localStorage.getItem(STORAGE_KEY_THEME) || 'dark');
     renderAll();
-    updateStorageStatusBadge('Ready');
+    updateStorageStatusBadge(isServerConnected ? 'Cloud Synced ☁️' : 'Local Saved ✓');
   }
 
   // --- STORAGE & STATE MANAGEMENT ---
   async function loadExpenses() {
+    // 1. If server is connected (Render / Node.js backend), fetch from Cloud DB
+    if (isServerConnected) {
+      try {
+        const res = await fetch('/api/expenses');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.expenses)) {
+            state.expenses = json.expenses;
+            if (json.budget) {
+              state.budget = Number(json.budget);
+              if (DOM.modalBudgetInput) DOM.modalBudgetInput.value = state.budget;
+            }
+            // Mirror to local cache for offline backup
+            try {
+              localStorage.setItem(STORAGE_KEY_EXPENSES, JSON.stringify(state.expenses));
+              saveToIndexedDB(STORAGE_KEY_EXPENSES, state.expenses);
+            } catch (_) {}
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Server fetch error, falling back to local storage:', err);
+      }
+    }
+
+    // 2. LocalStorage fallback
     try {
       const data = localStorage.getItem(STORAGE_KEY_EXPENSES);
       if (data && data !== '[]') {
@@ -644,9 +686,10 @@
   }
 
   // --- ACTIONS & HANDLERS ---
-  function addExpense(data) {
+  async function addExpense(data) {
+    const tempId = 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     const newTx = {
-      id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      id: tempId,
       amount: parseFloat(data.amount),
       item: data.item.trim(),
       category: data.category,
@@ -656,6 +699,25 @@
       createdAt: Date.now()
     };
 
+    // If connected to Render/Node backend, post to API
+    if (isServerConnected) {
+      try {
+        const res = await fetch('/api/expenses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newTx)
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.expense) {
+            newTx.id = json.expense.id;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to post expense to server, keeping local:', err);
+      }
+    }
+
     state.expenses.unshift(newTx);
     saveExpenses();
     renderAll();
@@ -663,12 +725,11 @@
     showToast(`Added ${escapeHtml(newTx.item)} for ${formatCurrency(newTx.amount)} AED`, 'success');
   }
 
-  function updateExpense(id, updatedData) {
+  async function updateExpense(id, updatedData) {
     const index = state.expenses.findIndex(tx => tx.id === id);
     if (index === -1) return;
 
-    state.expenses[index] = {
-      ...state.expenses[index],
+    const payload = {
       amount: parseFloat(updatedData.amount),
       item: updatedData.item.trim(),
       category: updatedData.category,
@@ -677,17 +738,42 @@
       notes: updatedData.notes ? updatedData.notes.trim() : ''
     };
 
+    if (isServerConnected) {
+      try {
+        await fetch(`/api/expenses/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.warn('Failed to update expense on server:', err);
+      }
+    }
+
+    state.expenses[index] = {
+      ...state.expenses[index],
+      ...payload
+    };
+
     saveExpenses();
     renderAll();
     showToast('Spending updated successfully', 'success');
   }
 
-  function deleteExpense(id) {
+  async function deleteExpense(id) {
     const tx = state.expenses.find(t => t.id === id);
     if (!tx) return;
 
     if (!confirm(`Delete "${tx.item}" (${formatCurrency(tx.amount)} AED)?`)) {
       return;
+    }
+
+    if (isServerConnected) {
+      try {
+        await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('Failed to delete on server:', err);
+      }
     }
 
     state.expenses = state.expenses.filter(t => t.id !== id);
